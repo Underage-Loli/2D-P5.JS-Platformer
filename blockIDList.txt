@@ -1,0 +1,7 @@
+0 / Air
+1 / Grass
+2 / Stone
+3 / Wood
+4 / Gold
+5 / Void
+6 / Glass
