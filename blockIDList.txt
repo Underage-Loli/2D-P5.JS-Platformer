@@ -3,5 +3,6 @@
 2 / Stone
 3 / Wood
 4 / Gold
-5 / Void
+5 / Coal
 6 / Glass
+7 / Diamond

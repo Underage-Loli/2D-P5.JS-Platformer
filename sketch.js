@@ -9,14 +9,17 @@ var bw, bh; //World Width/Length/Height;
 
 //Block Colours
 var bc = [[0, 255, 255, 255], [0, 175, 0, 255], [100, 100, 100, 255], [139, 69, 19, 255],
-[255, 215, 0, 255], [0, 0, 0, 255], [255, 255, 255, 100]];
+[255, 215, 0, 255], [0, 0, 0, 255], [255, 255, 255, 100], [0, 100, 255], [58, 95, 11]];
+
+//TransID
+var transID = [0];
 
 
 //World Gen
 var world = [];
-var maxBlockHeight = 5;
-var chunkLimit = 5;
-var currentChunk = 0;
+var maxBlockHeight = 4; // Lower = Higher Block Spawn Height
+var chunkLimit = 100;
+var currentChunk = 50;
 
 
 //HOTBAR
@@ -80,8 +83,8 @@ function Player(x, y) {
 
 	//FUNCTIONS
 	this.render = function() {
-		fill(0);
-		stroke(255);
+		fill(255, 255, 150);
+		stroke(0);
 		rect(this.x * bw, this.y * bh, bw, bh);
 	}
 
@@ -93,7 +96,7 @@ function Player(x, y) {
 	this.grav = function() {
 		//console.log(this.jmpDelay);
 		//console.log(world[currentChunk].blocks[this.x][this.y+1].t);
-		if (world[currentChunk].blocks[this.x][this.y+1].t == 0 && this.jmpDelay <= 0) {
+		if (world[currentChunk].blocks[this.x][this.y+1].trans == true && this.jmpDelay <= 0) {
 			this.y += this.g;
 			this.g += 1;
 			if (this.g > 1) {
@@ -106,9 +109,9 @@ function Player(x, y) {
 	}
 
 	this.jump = function() {
-		if (world[currentChunk].blocks[this.x][this.y+1].t != 0) {
-			if (world[currentChunk].blocks[this.x][this.y-1].t == 0) {
-				if (world[currentChunk].blocks[this.x][this.y-2].t == 0) {
+		if (world[currentChunk].blocks[this.x][this.y+1].trans != true) {
+			if (world[currentChunk].blocks[this.x][this.y-1].trans == true) {
+				if (world[currentChunk].blocks[this.x][this.y-2].trans == true) {
 					this.y -= 2;
 					if (this.y <= -1) {
 						this.y = 0;
@@ -127,7 +130,7 @@ function Player(x, y) {
 
 	this.move = function() {
 		if (this.x+this.m >= 0 && this.x+this.m < ww){
-			if (world[currentChunk].blocks[this.x+this.m][this.y].t == 0) {
+			if (world[currentChunk].blocks[this.x+this.m][this.y].trans == true) {
 				this.x += this.m;
 				if (this.x < 0) {
 					currentChunk -= 1;
@@ -147,11 +150,14 @@ function Player(x, y) {
 	}
 }
 
-function Block(x, y, t) {
+function Block(x, y, t, tr) {
 	this.x = x;
 	this.y = y;
 
 	this.t = t;
+	this.trans = tr;
+	this.breakable = true;
+	this.drops = true;
 
 	this.render = function() {
 		fill (bc[this.t][0], bc[this.t][1], bc[this.t][2], bc[this.t][3])
@@ -164,34 +170,39 @@ function Block(x, y, t) {
 
 	this.mine = function() {
 		var foundslot = false;
-		if (this.t != 0) {
-			for (i = 0; i < hb.i.length; i++) {
-				if (hb.i[i].t != null) {
-					if (hb.i[i].t == this.t) {
-						hb.i[i].a += 1;
-						foundslot = true;
-						break;
-					}
-				}
-			}
-			if (foundslot == false) {
+		if (this.t != 0 && this.breakable) {
+			if (this.drops) {
 				for (i = 0; i < hb.i.length; i++) {
-					if (hb.i[i].t == null) {
-						hb.i[i].t = this.t;
-						hb.i[i].a += 1;
-						foundslot = true;
-						break;
+					if (hb.i[i].t != null) {
+						if (hb.i[i].t == this.t) {
+							hb.i[i].a += 1;
+							foundslot = true;
+							break;
+						}
+					}
+				}
+				if (foundslot == false) {
+					for (i = 0; i < hb.i.length; i++) {
+						if (hb.i[i].t == null) {
+							hb.i[i].t = this.t;
+							hb.i[i].trans = this.trans;
+							hb.i[i].a += 1;
+							foundslot = true;
+							break;
+						}
 					}
 				}
 			}
-			if (foundslot == false) {console.log("UNABLE TO PICK UP");}
-			//console.log("mine");
-			this.t = 0;
+		if (foundslot == false) {console.log("UNABLE TO PICK UP");}
+		//console.log("mine");
+		this.t = 0;
+		this.trans = true;
 		}
 	}
 
 	this.place = function() {
 		this.t = hb.i[hb.s].t;
+		this.trans = hb.i[hb.s].trans;
 		hb.i[hb.s].a -= 1;
 
 		if (hb.i[hb.s].a == 0) {
@@ -245,17 +256,48 @@ function Chunk() {
 	this.blocks = [];
 	this.b = 0;
 
+	//Max Ore Gen
+	this.s
+
 	this.create = function() {
 		console.log("Creating Chunk");
 		for (i = 0; i < ww; i++) {
 			this.blocks.push([]);
 			for (j = 0; j < wh; j++) {
-				if (j > maxBlockHeight) {this.blocks[i].push(new Block(i, j, 1));}
-				else {this.blocks[i].push(new Block(i, j, 0));}
+				if (j == maxBlockHeight || j == maxBlockHeight+1) {this.blocks[i].push(new Block(i, j, 1, false));} // Grass
+				else if (j > maxBlockHeight) {this.blocks[i].push(new Block(i, j, 2, false));} // Stone
+				else {this.blocks[i].push(new Block(i, j, 0, true));} // Air
 			}
 		}
+
+		//Ores
+		for (i = 0; i < ww; i++) {
+			for (j = maxBlockHeight+2; j < wh; j++) {
+				this.temp = floor(random(1, 11));
+				if (this.temp == 1 || this.temp == 2) {this.blocks[i][j] = new Block(i, j, 5, false)} // Coal
+				else if (this.temp == 3) {this.blocks[i][j] = new Block(i, j, 4, false);} //Gold
+				else if (this.temp == 9) {this.blocks[i][j] = new Block(i, j, 7, false)} //Diamond
+			}
+		}
+
+		//Trees
+		this.tempVar = 0;
+		while (this.tempVar < ww) {
+			this.temp = floor(random(1,6));
+			if (this.temp == 5 && (this.tempVar != 0 && this.tempVar != ww-1)) {
+				for (j = 0; j < maxBlockHeight; j++) {
+					this.blocks[this.tempVar][j] = new Block(this.tempVar, j, 3, false);
+				}
+				this.blocks[this.tempVar-1][0] = new Block(this.tempVar-1, 0, 8, false);
+				this.blocks[this.tempVar][0] = new Block(this.tempVar, 0, 8, false);
+				this.blocks[this.tempVar+1][0] = new Block(this.tempVar+1, 0, 8, false);
+				this.tempVar++;
+			} //Build Tree
+			this.tempVar++;
+		}
+
 		console.log("Chunk Created");
-		this.b = 1;
+		this.b = 1; //CHUNK BUILT
 	}
 
 	this.render = function() {
@@ -304,8 +346,34 @@ function Hotbar() {
 
 function hbslot() {
 	this.t = null;
+	this.trans = null;
 	this.a = 0;
 }
+
+//Cheats:
+function give(id) {
+	var foundslot = false;
+	for (i = 0; i < hb.i.length; i++) {
+		if (hb.i[i].t != null) {
+			if (hb.i[i].t == id) {
+				hb.i[i].a += 64;
+				foundslot = true;
+				break;
+			}
+		}
+	}
+	if (foundslot == false) {
+		for (i = 0; i < hb.i.length; i++) {
+			if (hb.i[i].t == null) {
+				hb.i[i].t = this.t;
+				hb.i[i].trans = this.trans;
+				hb.i[i].a += 1;
+				foundslot = true;
+				break;
+			}
+		}
+	}
+} // Connot Be Activated Yet
 
 //Luke Poulter
 //JS && P5.JS - 2D SURVIVAL GAME
