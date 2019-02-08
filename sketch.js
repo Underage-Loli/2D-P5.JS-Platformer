@@ -12,7 +12,8 @@ var bw, bh; //World Width/Length/Height;
 
 //Block Colours //In ID Order
 var bc = [[0, 255, 255, 255], [0, 175, 0, 255], [100, 100, 100, 255], [139, 69, 19, 255],
-[255, 215, 0, 255], [0, 0, 0, 255], [255, 255, 255, 100], [0, 100, 255, 255], [58, 95, 11, 255]];
+[255, 215, 0, 255], [0, 0, 0, 255], [255, 255, 255, 100], [0, 100, 255, 255], [58, 95, 11, 255],
+[133, 150, 35]];
 
 //TransID
 var transID = [0];
@@ -33,7 +34,7 @@ var hbl = 9;
 
 //PLAYER
 var p;
-var pspawn = [0, maxBlockHeight-1];
+var pspawn = [0, maxBlockHeight-3];
 var range = 2;
 
 //ENEMY
@@ -413,12 +414,19 @@ function Chunk() {
 
 	//Max Ore Gen
 
+	this.oh = {
+		c: wh-10,
+		g: wh-7,
+		d: wh-5,
+	}
+
 	this.create = function() {
 		//console.log("Creating Chunk");
 		for (i = 0; i < ww; i++) {
 			this.blocks.push([]);
 			for (j = 0; j < wh; j++) {
-				if (j == maxBlockHeight || j == maxBlockHeight+1) {this.blocks[i].push(new Block(i, j, 1, false));} // Grass
+				if (j == maxBlockHeight) {this.blocks[i].push(new Block(i, j, 1, false));} // Grass
+				else if (j == maxBlockHeight+1) {this.blocks[i].push(new Block(i, j, 9, false));} //Dirt
 				else if (j > maxBlockHeight) {this.blocks[i].push(new Block(i, j, 2, false));} // Stone
 				else {this.blocks[i].push(new Block(i, j, 0, true));} // Air
 			}
@@ -428,9 +436,9 @@ function Chunk() {
 		for (i = 0; i < ww; i++) {
 			for (j = maxBlockHeight+2; j < wh; j++) {
 				this.temp = floor(random(1, 101));
-				if (this.temp >=1 && this.temp <= 10) {this.blocks[i][j] = new Block(i, j, 5, false)} // Coal
-				else if (this.temp >= 11 && this.temp <= 15) {this.blocks[i][j] = new Block(i, j, 4, false);} //Gold
-				else if (this.temp >= 16 && this.temp <= 17) {this.blocks[i][j] = new Block(i, j, 7, false)} //Diamond
+				if (this.temp >=1 && this.temp <= 10 && j > this.oh.c) {this.blocks[i][j] = new Block(i, j, 5, false)} // Coal
+				else if (this.temp >= 11 && this.temp <= 15 && j > this.oh.g) {this.blocks[i][j] = new Block(i, j, 4, false);} //Gold
+				else if (this.temp >= 16 && this.temp <= 17 && j > this.oh.d) {this.blocks[i][j] = new Block(i, j, 7, false)} //Diamond
 			}
 		}
 
@@ -459,25 +467,31 @@ function Chunk() {
 			this.temp = floor(random(0,5));
 			if (this.temp == 4 && (this.tempVar != 0 && this.tempVar != ww-1)) {
 				this.blocks[this.tempVar][maxBlockHeight-1] = new Block(this.tempVar, maxBlockHeight-1, 1, false);
+				this.blocks[this.tempVar][maxBlockHeight] = new Block(this.tempVar, maxBlockHeight, 9, false);
 			} else if (this.temp == 0 && (this.tempVar != 0 && this.tempVar != ww-1)) {
-				this.blocks[this.tempVar][maxBlockHeight-1] = new Block(this.tempVar, maxBlockHeight-1, 1, false);
+				this.blocks[this.tempVar][maxBlockHeight-1] = new Block(this.tempVar, maxBlockHeight-1, 9, false);
 				this.blocks[this.tempVar-1][maxBlockHeight-1] = new Block(this.tempVar-1, maxBlockHeight-1, 1, false);
 				this.blocks[this.tempVar+1][maxBlockHeight-1] = new Block(this.tempVar+1, maxBlockHeight-1, 1, false);
 				this.blocks[this.tempVar][maxBlockHeight-2] = new Block(this.tempVar, maxBlockHeight-2, 1, false);
+
+				this.blocks[this.tempVar][maxBlockHeight] = new Block(this.tempVar, maxBlockHeight, 9, false);
+				this.blocks[this.tempVar-1][maxBlockHeight] = new Block(this.tempVar-1, maxBlockHeight, 9, false);
+				this.blocks[this.tempVar+1][maxBlockHeight] = new Block(this.tempVar+1, maxBlockHeight, 9, false);
 				this.tempVar += 2;
 			} else if (this.temp == 2 && (this.tempVar != 0 && this.tempVar != ww-1) &&
 					this.blocks[this.tempVar][maxBlockHeight-1].t != 3) {
 				this.blocks[this.tempVar][maxBlockHeight] = new Block(this.tempVar, maxBlockHeight, 0, true);
-				this.blocks[this.tempVar][maxBlockHeight+2] = new Block(this.tempVar, maxBlockHeight+2, 1, false);
+				this.blocks[this.tempVar][maxBlockHeight+1] = new Block(this.tempVar, maxBlockHeight+1, 1, false);
+				this.blocks[this.tempVar][maxBlockHeight+2] = new Block(this.tempVar, maxBlockHeight+2, 9, false);
 				this.tempVar+=2;
 			}
 			this.tempVar++;
 		}		
 
 		//random Hole.
-		this.holes = floor(random(0, 5));
+		this.holes = floor(random(0, 5)); //Amount
 		for (i = 0; i < this.holes; i++) {
-			this.tempx = floor(random(2, ww-1)); this.tempy = floor(random(maxBlockHeight+2, wh-1));
+			this.tempx = floor(random(2, ww-1)); this.tempy = floor(random(maxBlockHeight+3, wh-1));
 			this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 0, true);
 			while(true) {
 				rdir = floor(random(0, 4));
@@ -492,7 +506,7 @@ function Chunk() {
 				}
 				if (this.tempx < 2 || this.tempx > ww-2) {
 					break;
-				} else if (this.tempy < maxBlockHeight+2 || this.tempy > wh-2) {
+				} else if (this.tempy < maxBlockHeight+3 || this.tempy > wh-2) {
 					break;
 				} else {
 					this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 0, true);
