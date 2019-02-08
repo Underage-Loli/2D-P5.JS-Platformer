@@ -6,3 +6,5 @@
 5 / Coal
 6 / Glass
 7 / Diamond
+8 / Leaves
+9 / Dirt
