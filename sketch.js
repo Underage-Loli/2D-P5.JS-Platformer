@@ -99,6 +99,8 @@ function Player(x, y) {
 	this.stats = {
 		h: 100,
 		d: 25,
+		acd: 10,
+		acdm: 10,
 	}
 
 	//FUNCTIONS
@@ -115,6 +117,8 @@ function Player(x, y) {
 	this.frame = function() {
 		this.move();
 		this.grav();
+
+		this.stats.acd -= 1;
 
 		if (this.stats.h <= 0) {
 			gameOver();
@@ -148,19 +152,11 @@ function Player(x, y) {
 	this.jump = function() {
 		if (world[currentChunk].blocks[this.x][this.y+1].trans != true) {
 			if (world[currentChunk].blocks[this.x][this.y-1].trans == true) {
-				if (world[currentChunk].blocks[this.x][this.y-2].trans == true) {
-					this.y -= 2;
-					if (this.y <= -1) {
-						this.y = 0;
-					}
-					this.jmpDelay = 2;
-				} else {
-					this.y -= 1;
-					if (this.y <= -1) {
-						this.y = 0;
-					}
-					this.jmpDelay = 2;
+				this.y -= 1;
+				if (this.y <= -1) {
+					this.y = 0;
 				}
+				this.jmpDelay = 2;
 			}
 		}
 	}
@@ -202,6 +198,8 @@ function Enemy(x, y) {
 
 	//JUMP
 	this.m = 0;
+	this.mt = 10;
+	this.mtd = 10;
 	this.g = 1;
 	this.jmpHeight = 2
 	this.jmpDelay = 0;
@@ -224,8 +222,23 @@ function Enemy(x, y) {
 	}
 
 	this.frame = function() {
-		//this.move();
+		this.bot();
 		this.grav();
+	}
+
+	this.bot = function() {
+		if (this.x < p.x) {
+			this.m = 1;
+		} else if (this.x > p.x) {
+			this.m = -1;
+		}
+
+		if (this.mt <= 0) {
+			this.move();
+			this.mt = this.mtd;
+		} else {
+			this.mt -= 1;
+		}
 	}
 
 	this.grav = function() {
@@ -255,19 +268,11 @@ function Enemy(x, y) {
 	this.jump = function() {
 		if (world[currentChunk].blocks[this.x][this.y+1].trans != true) {
 			if (world[currentChunk].blocks[this.x][this.y-1].trans == true) {
-				if (world[currentChunk].blocks[this.x][this.y-2].trans == true) {
-					this.y -= 2;
-					if (this.y <= -1) {
-						this.y = 0;
-					}
-					this.jmpDelay = 2;
-				} else {
 					this.y -= 1;
 					if (this.y <= -1) {
 						this.y = 0;
 					}
 					this.jmpDelay = 2;
-				}
 			}
 		}
 	}
@@ -280,10 +285,19 @@ function Enemy(x, y) {
 					currentChunk -= 1;
 					this.x = ww;
 				}
+			}  else {
+				this.jump();
+				if (world[currentChunk].blocks[this.x+this.m][this.y].trans == true) {
+					this.x += this.m;
+					if (this.x < 0) {
+						currentChunk -= 1;
+						this.x = ww;
+					}
+				}
 			}
 		} else {
 			currentChunk += this.m;
-			//TEST CREATEION
+			//TEST
 			if (world[currentChunk].b == 0) {world[currentChunk].create();}
 			if (this.m == 1) {
 				this.x = 0;
@@ -385,7 +399,7 @@ function mousePressed() {
 			//console.log("NEXT TO PLAYER");
 			if (es[currentChunk] != null) {
 				if (click[0] == es[currentChunk].x && click[1] == es[currentChunk].y) {
-					es[currentChunk].stats.h -= p.stats.d;
+					if (p.stats.acd <= 0) {es[currentChunk].stats.h -= p.stats.d; p.stats.acd = p.stats.acdm}
 				} else if (world[currentChunk].blocks[click[0]][click[1]].t == 0 
 					&& hb.i[hb.s].a >= 1 && (p.x != click[0] || p.y != click[1])) {
 					world[currentChunk].blocks[click[0]][click[1]].place();
@@ -474,7 +488,14 @@ function Chunk() {
 				this.blocks[this.tempVar+1][maxBlockHeight-1] = new Block(this.tempVar+1, maxBlockHeight-1, 1, false);
 				this.blocks[this.tempVar][maxBlockHeight-2] = new Block(this.tempVar, maxBlockHeight-2, 1, false);
 
-				this.blocks[this.tempVar][maxBlockHeight] = new Block(this.tempVar, maxBlockHeight, 9, false);
+				this.blocks[this.tempVar][maxBlockHeight] = new Block(this.tempVar, maxBlockHeight, 2, false);
+				this.blocks[this.tempVar][maxBlockHeight+1] = new Block(this.tempVar, maxBlockHeight+1, 2, false);
+				if(floor(random(0, 2))) {
+					this.blocks[this.tempVar-1][maxBlockHeight+1] = new Block(this.tempVar-1, maxBlockHeight+1, 2, false);
+				}if (floor(random(0, 2))) {
+					this.blocks[this.tempVar+1][maxBlockHeight+1] = new Block(this.tempVar+1, maxBlockHeight+1, 2, false);
+				}
+
 				this.blocks[this.tempVar-1][maxBlockHeight] = new Block(this.tempVar-1, maxBlockHeight, 9, false);
 				this.blocks[this.tempVar+1][maxBlockHeight] = new Block(this.tempVar+1, maxBlockHeight, 9, false);
 				this.tempVar += 2;
