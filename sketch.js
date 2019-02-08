@@ -11,9 +11,9 @@ var bw, bh; //World Width/Length/Height;
 
 
 //Block Colours //In ID Order
-var bc = [[0, 255, 255, 255], [0, 175, 0, 255], [100, 100, 100, 255], [139, 69, 19, 255],
+var bc = [[147, 242, 255, 255], [0, 175, 0, 255], [140, 140, 140, 255], [76, 52, 0, 255],
 [255, 215, 0, 255], [0, 0, 0, 255], [255, 255, 255, 100], [0, 100, 255, 255], [58, 95, 11, 255],
-[133, 150, 35]];
+[139, 69, 19, 255], [0, 100, 255, 100], [147, 146, 146, 255], [132, 128, 128, 255]];
 
 //TransID
 var transID = [0];
@@ -312,21 +312,49 @@ function Block(x, y, t, tr) {
 	this.x = x;
 	this.y = y;
 
+	this.l = 10;
+	this.s = 0;
+
 	this.t = t;
 	this.trans = tr;
 	this.breakable = true;
 	this.drops = true;
 
 	this.render = function() {
+		if (this.t == 10) {this.flow();}
 		fill (bc[this.t][0], bc[this.t][1], bc[this.t][2], bc[this.t][3])
 		if (this.t == 0) {
 			if (this.y >= maxBlockHeight) {
-				fill(bc[this.t][0], bc[this.t][1]-(this.y-maxBlockHeight)*10, bc[this.t][2]-(this.y-maxBlockHeight)*10, bc[this.t][3]);
+				fill (bc[this.t][0], bc[this.t][1], bc[this.t][2], bc[this.t][3])
 			}
 			stroke(0, 0);
+		} if (this.t == 2) {
+			stroke(0, 255);
+			fill (bc[this.s][0], bc[this.s][1], bc[this.s][2], bc[this.s][3])
+		} if (this.t == 5) {
+			stroke(0, 255);
+			fill (bc[2][0], bc[2][1], bc[2][2], bc[2][3])
+			rect(this.x * bw, this.y * bh, bw, bh);
+			fill (bc[this.t][0], bc[this.t][1], bc[this.t][2], bc[this.t][3])
+			rect(this.x * bw + 10, this.y * bh + 10, bw - 20, bh - 20);
+			return;
+		} if (this.t == 4) {
+			stroke(0, 255);
+			fill (bc[2][0], bc[2][1], bc[2][2], bc[2][3])
+			rect(this.x * bw, this.y * bh, bw, bh);
+			fill (bc[this.t][0], bc[this.t][1], bc[this.t][2], bc[this.t][3])
+			rect(this.x * bw + 10, this.y * bh + 10, bw - 20, bh - 20);
+			return;
+		} if (this.t == 7) {
+			stroke(0, 255);
+			fill (bc[2][0], bc[2][1], bc[2][2], bc[2][3])
+			rect(this.x * bw, this.y * bh, bw, bh);
+			fill (bc[this.t][0], bc[this.t][1], bc[this.t][2], bc[this.t][3])
+			rect(this.x * bw + 10, this.y * bh + 10, bw - 20, bh - 20);
+			return;
 		} else {stroke(0, 200);}
 		
-		rect(this.x * bw, this.y * bh, bw, bh)
+		rect(this.x * bw, this.y * bh, bw, bh);
 	}
 
 	this.mine = function() {
@@ -368,6 +396,26 @@ function Block(x, y, t, tr) {
 
 		if (hb.i[hb.s].a == 0) {
 			hb.i[hb.s].t = null;
+		}
+	}
+
+	this.flow = function() {
+		if (this.t == 10 && this.l > 0) {
+			if (world[currentChunk].blocks[this.x][this.y+1].t == 0 ||
+				world[currentChunk].blocks[this.x][this.y+1].t == 10) {
+				world[currentChunk].blocks[this.x][this.y+1] = new Block(this.x, this.y+1, 10, true);
+				world[currentChunk].blocks[this.x][this.y+1].l = 10;
+			} else {
+				if (world[currentChunk].blocks[this.x-1][this.y].t == 0 ||
+					world[currentChunk].blocks[this.x-1][this.y].t == 10) {
+					world[currentChunk].blocks[this.x-1][this.y] = new Block(this.x-1, this.y, 10, true);
+					world[currentChunk].blocks[this.x-1][this.y].l = this.l-1;
+				} if (world[currentChunk].blocks[this.x+1][this.y].t == 0 ||
+					world[currentChunk].blocks[this.x+1][this.y].t == 10) {
+					world[currentChunk].blocks[this.x+1][this.y] = new Block(this.x+1, this.y, 10, true);
+					world[currentChunk].blocks[this.x+1][this.y].l = this.l-1;
+				}
+			}
 		}
 	}
 }
@@ -429,9 +477,9 @@ function Chunk() {
 	//Max Ore Gen
 
 	this.oh = {
-		c: wh-10,
-		g: wh-7,
-		d: wh-5,
+		c: maxBlockHeight+5,
+		g: maxBlockHeight+10,
+		d: maxBlockHeight+15,
 	}
 
 	this.create = function() {
@@ -513,7 +561,8 @@ function Chunk() {
 		this.holes = floor(random(0, 5)); //Amount
 		for (i = 0; i < this.holes; i++) {
 			this.tempx = floor(random(2, ww-1)); this.tempy = floor(random(maxBlockHeight+3, wh-1));
-			this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 0, true);
+			//this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 0, true);
+			this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 10, true);
 			while(true) {
 				rdir = floor(random(0, 4));
 				if (rdir == 0) {
@@ -531,7 +580,34 @@ function Chunk() {
 					break;
 				} else {
 					this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 0, true);
-				if (floor(random(0, 6)) == 5) {break};
+					if (floor(random(0, 6)) == 5) {break};
+				}
+			}
+		}
+
+				//random Hole.
+		this.dirts = floor(random(0, 5)); //Amount
+		for (i = 0; i < this.dirts; i++) {
+			this.tempx = floor(random(2, ww-1)); this.tempy = floor(random(maxBlockHeight+6, wh-1));
+			this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 0, true);
+			while(true) {
+				rdir = floor(random(0, 4));
+				if (rdir == 0) {
+					this.tempx -= 1;
+				} else if(rdir == 1) {
+					this.tempy -= 1;
+				} else if (rdir == 2) {
+					this.tempx += 1;
+				} else if(rdir == 3) {
+					this.tempy += 1;
+				}
+				if (this.tempx < 2 || this.tempx > ww-2) {
+					break;
+				} else if (this.tempy < maxBlockHeight+4 || this.tempy > wh-2) {
+					break;
+				} else {
+					this.blocks[this.tempx][this.tempy] = new Block(this.tempx, this.tempy, 9, false);
+				if (floor(random(0, 10)) == 9) {break};
 				}
 			}
 		}
@@ -542,6 +618,22 @@ function Chunk() {
 				es[currentChunk] = new Enemy(floor(random(3, ww-3)), maxBlockHeight-1);
 			} else {
 				break;
+			}
+		}
+
+		//Stone Colours
+		for (i = 0; i < ww; i++) {
+			for (j = 0; j < wh; j++) {
+				if (this.blocks[i][j].t == 2) {
+					this.temps = floor(random(0, 3));
+					if (this.temps == 0) {
+						this.blocks[i][j].s = 2;
+					} else if (this.temps == 1) {
+						this.blocks[i][j].s = 11;
+					} else if (this.temps == 2) {
+						this.blocks[i][j].s = 12;
+					}
+				}
 			}
 		}
 

@@ -8,3 +8,6 @@
 7 / Diamond
 8 / Leaves
 9 / Dirt
+10 / Water
+11 / Stone 2
+12 / Stone 3
